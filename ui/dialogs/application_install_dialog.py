@@ -5,7 +5,7 @@ import threading
 import tkinter as tk
 from tkinter import Listbox, filedialog, messagebox
 from ui import screen_ids
-from ui.base_dialog import BaseDialog
+from ui.dialogs.base_dialog import BaseDialog
 from utils import colors
 
 

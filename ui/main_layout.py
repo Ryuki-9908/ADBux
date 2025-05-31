@@ -7,12 +7,11 @@ from exceptions.adb_exception import NoDeviceSelect
 from ui import screen_ids
 from ui.menu.connect_device_listbox_menu import ConnectDeviceListboxMenu
 from utils import colors
-from utils.log import Log
 from utils.command import Command
-from config.settings import Settings
+from core.context import Context
 from ui.menu.freq_used_listbox_menu import FreqUsedListboxMenu
-from utils.device_handler import DeviceHandler
-from db import freq_device_handler
+from ui.handlers.device_handler import DeviceHandler
+from db.handlers import freq_device_handler
 
 
 class MainLayout(tk.Tk):
@@ -23,9 +22,8 @@ class MainLayout(tk.Tk):
 		# 各画面への通知用キューを画面IDに紐づけて生成
 		self.queues = {}
 		# ロガー生成
-		self.log = Log(tag=class_name).get_logger()
-		# 設定ファイル読み込み
-		config = Settings()
+		context = Context(class_name)
+		self.logger = context.get_logger()
 		# ハンドラ初期化
 		self.commander = Command()
 		self.device_handler = DeviceHandler()
@@ -80,7 +78,7 @@ class MainLayout(tk.Tk):
 		disconnect_devices = self.disconnect_devices.copy()
 		self.disconnect_devices.clear()
 
-		self.log.debug("notice queues call.")
+		self.logger.debug("notice queues call.")
 		try:
 			destroy_items = []
 			# 何かしらの操作画面を表示しているデバイスリスト
@@ -93,10 +91,10 @@ class MainLayout(tk.Tk):
 			for item in destroy_items:
 				que = self.queues.get(item)
 				device = item.split("_")[1]
-				self.log.debug("[send] {} disconnected.".format(device))
+				self.logger.debug("[send] {} disconnected.".format(device))
 				que.put("[receive] {} disconnected.".format(device))
 		except Exception as e:
-			self.log.error(e)
+			self.logger.error(e)
 
 	# 毎秒、接続デバイスを自動更新
 	def time_event(self):
@@ -130,7 +128,7 @@ class MainLayout(tk.Tk):
 			th.start()
 
 		if (event is not None) and (self.freq_menu is not None):
-			self.log.debug("device list reload button click.")
+			self.logger.debug("device list reload button click.")
 			save_data = self.freq_device_handler.get_all_device()
 			self.freq_menu.show_list_reload(save_data)
 
@@ -152,16 +150,16 @@ class MainLayout(tk.Tk):
 					# 切断処理
 					result = self.device_handler.disconnect(tar_device=device)
 					if result:
-						self.log.info("connect success.")
+						self.logger.info("connect success.")
 						messagebox.showinfo("Success", "【" + device + "】" + "を切断しました。", parent=self)
 					else:
-						self.log.error("disconnected failed.")
+						self.logger.error("disconnected failed.")
 						messagebox.showerror("Error", "【" + device + "】" + "の切断に失敗しました。", parent=self)
 		except NoDeviceSelect as e:
-			self.log.error(e)
+			self.logger.error(e)
 			messagebox.showerror("Error", "対象のデバイスを選択してください。", parent=self)
 		except Exception as e:
-			self.log.error(e)
+			self.logger.error(e)
 
 	# scrcpyで画面表示
 	def show_screen(self, event=None):
@@ -180,7 +178,7 @@ class MainLayout(tk.Tk):
 					thread = threading.Thread(target=self.device_handler.view_screen, args=(device,), daemon=True)
 					thread.start()
 		except Exception as e:
-			self.log.error(e)
+			self.logger.error(e)
 			messagebox.showerror("Error", "対象のデバイスを選択してください。", parent=self)
 
 	""" 再起動 """
@@ -200,10 +198,10 @@ class MainLayout(tk.Tk):
 					self.device_handler.reboot(device)
 					messagebox.showinfo("Success", "【" + device + "】" + "に再起動処理を要求しました。", parent=self)
 		except NoDeviceSelect as e:
-			self.log.error(e)
+			self.logger.error(e)
 			messagebox.showerror("Error", "対象のデバイスを選択してください。", parent=self)
 		except Exception as e:
-			self.log.error(e)
+			self.logger.error(e)
 
 	""" シャットダウン """
 	def shutdown(self, event=None):
@@ -222,10 +220,10 @@ class MainLayout(tk.Tk):
 					self.device_handler.shutdown(device)
 					messagebox.showinfo("Success", "【" + device + "】" + "にシャットダウン処理を要求しました。", parent=self)
 		except NoDeviceSelect as e:
-			self.log.error(e)
+			self.logger.error(e)
 			messagebox.showerror("Error", "対象のデバイスを選択してください。", parent=self)
 		except Exception as e:
-			self.log.error(e)
+			self.logger.error(e)
 
 	""" TimeZone設定 """
 	def timezone_setting(self, event=None):
@@ -244,10 +242,10 @@ class MainLayout(tk.Tk):
 				else:
 					messagebox.showerror("Error", "【" + device + "】" + "のタイムゾーン設定に失敗しました。", parent=self)
 		except NoDeviceSelect as e:
-			self.log.error(e)
+			self.logger.error(e)
 			messagebox.showerror("Error", "対象のデバイスを選択してください。", parent=self)
 		except Exception as e:
-			self.log.error(e)
+			self.logger.error(e)
 
 	""" 端末の画面撮影 """
 	def screen_shot(self, event):
@@ -264,16 +262,16 @@ class MainLayout(tk.Tk):
 				self.device_handler.screen_shot(device)
 				messagebox.showinfo("成功", "【" + device + "】" + "の画面キャプチャを取得しました。", parent=self)
 		except NoDeviceSelect as e:
-			self.log.error(e)
+			self.logger.error(e)
 			messagebox.showerror("失敗", "対象のデバイスを選択してください。", parent=self)
 		except Exception as e:
-			self.log.error(e)
+			self.logger.error(e)
 			messagebox.showerror("失敗", "画面キャプチャ取得の要求に失敗しました。", parent=self)
 
 	""" アプリインストール画面表示 """
 	def show_install_window(self, event):
 		def show_task(select_device):
-			from ui import ApplicationInstallDialog
+			from ui.dialogs import ApplicationInstallDialog
 			""" 選択したデバイスが切断されたことを通知するキューを生成 """
 			is_new, que = self.add_queues(screen_ids.APPLICATION_INSTALL_SCREEN, select_device)
 			if is_new:
@@ -292,16 +290,16 @@ class MainLayout(tk.Tk):
 			th = threading.Thread(target=show_task(device))
 			th.start()
 		except NoDeviceSelect as e:
-			self.log.error(e)
+			self.logger.error(e)
 			messagebox.showerror("失敗", "対象のデバイスを選択してください。", parent=self)
 		except Exception as e:
-			self.log.error(e)
+			self.logger.error(e)
 			messagebox.showerror("失敗", "対象のデバイスが見つかりません。", parent=self)
 
 	""" デバイス接続画面表示 """
 	def show_connect_window(self, event):
 		def show_task():
-			from ui import DeviceConnectDialog
+			from ui.dialogs import DeviceConnectDialog
 			# 対象デバイスは存在しないため固定値をキーとする。
 			que_key = "0000"
 			is_new, que = self.add_queues(screen_ids.NETWORK_CONNECT_SCREEN, que_key)
@@ -317,7 +315,7 @@ class MainLayout(tk.Tk):
 			th = threading.Thread(target=show_task())
 			th.start()
 		except Exception as e:
-			self.log.error(e)
+			self.logger.error(e)
 
 	""" サブ画面が閉じられた時のコールバック """
 	def close_callback(self, screen_id, device,):

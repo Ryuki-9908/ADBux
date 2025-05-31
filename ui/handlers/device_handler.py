@@ -1,10 +1,9 @@
 import subprocess
-import time
 from datetime import datetime
 
 from exceptions.adb_exception import NoDeviceSelect
 from utils.command import Command
-from utils.log import Log
+from core.context import Context
 
 
 class DeviceHandler:
@@ -13,13 +12,15 @@ class DeviceHandler:
         class_name = self.__class__.__name__
         # ハンドラの初期化
         self.commander = Command()
-        self.log = Log(tag=class_name).get_logger()
+        self.context = Context(class_name)
+        self.logger = self.context.get_logger()
+        self.setting = self.context.setting
         # 接続処理の最大試行回数
         self.connect_max_retry = 5
 
     """ デバイス切断 """
     def disconnect(self, tar_device) -> bool:
-        self.log.debug("device disconnect run.")
+        self.logger.debug("device disconnect run.")
         result = False
         if tar_device:
             cmd_result = self.commander.send_command(['adb', '-s', tar_device, 'disconnect'])
@@ -35,7 +36,7 @@ class DeviceHandler:
         ip_addr_port = ip_addr
         if len(port) > 0:
             ip_addr_port += f":{port}"
-        self.log.debug("device connect run.")
+        self.logger.debug("device connect run.")
         message = ["error", "connect", "already"]
         result_num = 0
         for i in range(self.connect_max_retry):
@@ -53,30 +54,31 @@ class DeviceHandler:
 
     """ 対象デバイスの画面を表示 """
     def view_screen(self, device):
-        self.log.debug("scrcpy run.")
         try:
-            result = subprocess.run(['./scrcpy/scrcpy.exe', '-s', device], encoding='utf-8', stdout=subprocess.PIPE)
+            path = self.context.get_scrcpy_dir()
+            print(f'{path}\\scrcpy.exe')
+            result = subprocess.run([f'{path}\\scrcpy.exe', '-s', device], encoding='utf-8', stdout=subprocess.PIPE)
             result = result.stdout.splitlines()
             if [s for s in result if 'ERROR' in s]:
-                self.log.error("run scrcpy.exe result error: {}.".format(result))
+                self.logger.error("run scrcpy.exe result error: {}.".format(result))
         except Exception as e:
-            self.log.error(e)
+            self.logger.error(e)
 
     """ 再起動 """
     def reboot(self, device):
-        self.log.debug("device reboot command run.")
+        self.logger.debug("device reboot command run.")
         self.commander.send_command(['adb', '-s', device, 'reboot'], result_wait=False)
-        self.log.debug("reboot command ok.")
+        self.logger.debug("reboot command ok.")
 
     """ シャットダウン """
     def shutdown(self, device):
-        self.log.debug("device shutdown command run.")
+        self.logger.debug("device shutdown command run.")
         self.commander.send_command(['adb', '-s', device, 'reboot', '-p'], result_wait=False)
-        self.log.debug("shutdown command ok.")
+        self.logger.debug("shutdown command ok.")
 
     """ TimeZone設定 """
     def timezone_setting(self, device):
-        self.log.debug("timezone setting command run.")
+        self.logger.debug("timezone setting command run.")
         is_ok = False
         result = self.commander.send_command(['adb', '-s', device, 'shell', 'setprop', 'persist.sys.timezone', '"Asia/Tokyo"'])
         if result:
@@ -84,14 +86,14 @@ class DeviceHandler:
                 is_ok = True
 
         if is_ok:
-            self.log.debug("timezone setting command ok.")
+            self.logger.debug("timezone setting command ok.")
         else:
-            self.log.error("timezone setting command failed.")
+            self.logger.error("timezone setting command failed.")
         return is_ok
 
     """ スクリーンショット取得 """
     def screen_shot(self, device):
-        self.log.debug("application get screen shot command run.")
+        self.logger.debug("application get screen shot command run.")
         now = datetime.now()
         dt = now.strftime('%Y-%m-%d_%H%M%S%f')
 
@@ -123,7 +125,7 @@ class DeviceHandler:
                     # device = device.split(":")[0]
                     device_items[device] = state
         except Exception as e:
-            self.log.error(e)
+            self.logger.error(e)
 
         return device_items
 

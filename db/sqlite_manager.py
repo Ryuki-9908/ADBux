@@ -1,14 +1,11 @@
 import sqlite3
+from core.context import Context
 
-from config.settings import Settings
 
-
-class SQLiteManager:
+class SQLiteManager(Context):
     def __init__(self):
-        # 設定ファイル読み込み
-        config = Settings()
-        db_path = config.get(section="Settings", key="db_path")
-        self.db_path = db_path
+        super().__init__(self.__class__.__name__)
+        self.db_path = self.config.DB_PATH
         self.conn = None
         self.create()
 
@@ -42,7 +39,7 @@ class SQLiteManager:
             try:
                 cur = self.conn.cursor()
                 # table生成
-                cur.execute('CREATE TABLE freq_devices(ipaddr STRING PRIMARY KEY)')
+                cur.execute('CREATE TABLE freq_devices(ipaddr STRING PRIMARY KEY, port STRING)')
                 cur.execute('CREATE TABLE used_devices(id INTEGER PRIMARY KEY AUTOINCREMENT, ipaddr STRING, port STRING)')
                 cur.execute('CREATE TABLE app_path(id INTEGER PRIMARY KEY AUTOINCREMENT, name STRING, path STRING UNIQUE)')
                 # DBコミット

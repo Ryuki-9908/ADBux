@@ -1,11 +1,10 @@
 import threading
 import tkinter as tk
-from config.settings import Settings
-from db import freq_device_handler
+from db.handlers.freq_device_handler import FreqDeviceHandler
 from utils.command import Command
-from utils.device_handler import DeviceHandler
-from utils.json_handler import JsonHandler
-from utils.log import Log
+from ui.handlers.device_handler import DeviceHandler
+from ui.handlers.json_handler import JsonHandler
+from core.context import Context
 
 
 class BaseDialog(tk.Frame):
@@ -22,15 +21,17 @@ class BaseDialog(tk.Frame):
         # 画面が閉じられた時のコールバック
         self.close_callback = close_callback
 
-        # ロガー生成
-        self.log = Log(tag=self.__class__.__name__).get_logger()
-        # 設定ファイル読み込み
-        config = Settings()
+        context = Context(self.__class__.__name__)
+        self.config = context.config
+        self.setting = context.setting
+        self.logger = context.logger
+
+        config = self.setting.get(section="Settings", key="save_data_json_path")
         # ハンドラ初期化
         self.commander = Command()
         self.json_handler = JsonHandler(config.get(section="Settings", key="save_data_json_path"))
         self.device_handler = DeviceHandler()
-        self.freq_device_handler = freq_device_handler.FreqDeviceHandler()
+        self.freq_device_handler = FreqDeviceHandler()
 
         # 画面をアクティブ
         self.dialog.focus_set()
@@ -48,7 +49,7 @@ class BaseDialog(tk.Frame):
     def notice_receiver(self):
         while True:
             message = self.que.get()
-            self.log.debug(message)
+            self.context.logger.debug(message)
             if "disconnect" in message:
                 # 画面を閉じる
                 self.after(0, self.handle_close())

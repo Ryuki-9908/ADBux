@@ -2,10 +2,10 @@ import tkinter as tk
 from tkinter import messagebox
 
 from exceptions.adb_exception import NoDeviceSelect
-from utils.device_handler import DeviceHandler
-from utils.log import Log
+from ui.handlers.device_handler import DeviceHandler
+from core.logger import Logger
 from ui.menu.freq_used_listbox_menu import freq_used_device_reload
-from db import freq_device_handler
+from db.handlers import freq_device_handler
 
 
 class ConnectDeviceListboxMenu:
@@ -15,7 +15,7 @@ class ConnectDeviceListboxMenu:
         self.listbox = listbox
         self.freq_used_listbox = freq_used_listbox
         # ロガー生成
-        self.log = Log(tag=class_name).get_logger()
+        self.log = Logger(tag=class_name).get_logger()
         self.freq_device_handler = freq_device_handler.FreqDeviceHandler()
         self.device_handler = device_handler
 

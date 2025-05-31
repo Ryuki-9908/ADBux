@@ -1,3 +1,0 @@
-#5 マルチプラットフォーム対応（Windows/Linux）
-・ping送信を分離し、subprocessで管理者権限を持って実行するよう修正
-・setting.iniの追加

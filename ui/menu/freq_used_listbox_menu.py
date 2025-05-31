@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
 
-from utils.device_handler import DeviceHandler
-from utils.log import Log
-from db import freq_device_handler
+from ui.handlers.device_handler import DeviceHandler
+from core.logger import Logger
+from db.handlers import freq_device_handler
 
 
 class FreqUsedListboxMenu:
@@ -14,7 +14,7 @@ class FreqUsedListboxMenu:
         self.device_handler = device_handler
         self.db_handler = freq_device_handler.FreqDeviceHandler()
         # ロガー生成
-        self.log = Log(tag=class_name).get_logger()
+        self.log = Logger(tag=class_name).get_logger()
 
     def show_menu(self, event):
         index = self.listbox.nearest(event.y)
