@@ -1,7 +1,6 @@
 import threading
 import tkinter as tk
 from db.handlers.freq_device_handler import FreqDeviceHandler
-from utils.command import Command
 from ui.handlers.device_handler import DeviceHandler
 from ui.handlers.json_handler import JsonHandler
 from core.context import Context
@@ -26,10 +25,7 @@ class BaseDialog(tk.Frame):
         self.setting = context.setting
         self.logger = context.logger
 
-        config = self.setting.get(section="Settings", key="save_data_json_path")
         # ハンドラ初期化
-        self.commander = Command()
-        self.json_handler = JsonHandler(config.get(section="Settings", key="save_data_json_path"))
         self.device_handler = DeviceHandler()
         self.freq_device_handler = FreqDeviceHandler()
 

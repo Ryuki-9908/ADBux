@@ -6,11 +6,12 @@ from core.setting import Setting
 class Context:
     def __init__(self, class_name: str):
         self.config = Config()
-        self.logger = Logger(class_name)
+        self._logger_instance = Logger(class_name).get_logger()
         self.setting = Setting(self.config.SETTING_INI)
 
-    def get_logger(self):
-        self.logger.get_logger()
+    @property
+    def logger(self):
+        return self._logger_instance
 
     def get_scrcpy_dir(self):
         section = self.config.SETTING_SECTION

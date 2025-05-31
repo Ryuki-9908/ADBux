@@ -1,12 +1,11 @@
 import os
 import subprocess
-from ui.error_dialog import ErrorDialog
+from ui.dialogs.error_dialog import ErrorDialog
 from core.logger import Logger
 
 
 class Command:
     def __init__(self):
-        super(Command, self).__init__()
         class_name = self.__class__.__name__
         self.log = Logger(class_name).get_logger()
         self.dialog = ErrorDialog()

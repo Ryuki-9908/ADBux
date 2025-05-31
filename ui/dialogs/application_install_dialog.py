@@ -4,9 +4,9 @@ import os
 import threading
 import tkinter as tk
 from tkinter import Listbox, filedialog, messagebox
-from ui import screen_ids
 from ui.dialogs.base_dialog import BaseDialog
-from utils import colors
+from utils import colors, screen_ids
+from db.handlers.install_app_path_handler import InstallAppPathHandler
 
 
 class ApplicationInstallDialog(BaseDialog):
@@ -14,7 +14,8 @@ class ApplicationInstallDialog(BaseDialog):
         super().__init__(dialog, screen_ids.APPLICATION_INSTALL_SCREEN, device, que, close_callback)
         """ 初期化処理 """
         # デフォルトの参照フォルダパスを取得
-        self.default_path = self.json_handler.get("last_path")
+        self.all_path = InstallAppPathHandler().get_all_path()
+        self.default_path = ""
         # 対象のデバイス
         self.device = device
         # インストール可能なアプリのリスト
@@ -128,7 +129,7 @@ class ApplicationInstallDialog(BaseDialog):
 
     def save_last_path(self):
         """現在のパスを設定ファイルに保存する"""
-        self.json_handler.set(key="last_path", value=self.folder_path.get())
+        # self.json_handler.set(key="last_path", value=self.folder_path.get())
 
     def handle_close(self):
         if self.close_callback:

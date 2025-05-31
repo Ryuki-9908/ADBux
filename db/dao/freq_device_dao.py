@@ -7,7 +7,7 @@ class FreqDeviceDao:
         self.manager = SQLiteManager()
         self.table_name = FreqDeviceModel.__table_name__
 
-    def insert(self, ipaddr, port):
+    def insert(self, ipaddr, port=None):
         """よく使うデバイスをINSERT"""
         query = f"""
             INSERT INTO {self.table_name} VALUES (?, ?)

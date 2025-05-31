@@ -13,7 +13,7 @@ class DeviceHandler:
         # ハンドラの初期化
         self.commander = Command()
         self.context = Context(class_name)
-        self.logger = self.context.get_logger()
+        self.logger = self.context.logger
         self.setting = self.context.setting
         # 接続処理の最大試行回数
         self.connect_max_retry = 5

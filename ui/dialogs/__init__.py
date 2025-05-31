@@ -1,2 +1,1 @@
-from ui.dialogs.application_install_dialog import ApplicationInstallDialog
-from ui.dialogs.device_connect_dialog import DeviceConnectDialog
+

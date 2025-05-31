@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from ui import screen_ids
 from ui.dialogs.base_dialog import BaseDialog
-from utils import colors
+from utils import colors, screen_ids
 
 
 class DeviceConnectDialog(BaseDialog):

@@ -4,36 +4,34 @@ import tkinter as tk
 from tkinter import Listbox, messagebox
 import time
 from exceptions.adb_exception import NoDeviceSelect
-from ui import screen_ids
 from ui.menu.connect_device_listbox_menu import ConnectDeviceListboxMenu
-from utils import colors
-from utils.command import Command
+from utils import colors, screen_ids
 from core.context import Context
 from ui.menu.freq_used_listbox_menu import FreqUsedListboxMenu
 from ui.handlers.device_handler import DeviceHandler
 from db.handlers import freq_device_handler
+from service.device_monitor_service import DeviceMonitorService
 
 
-class MainLayout(tk.Tk):
+class MainWindow(tk.Tk):
 	def __init__(self):
 		super().__init__()
 		""" 初期化処理 """
-		class_name = self.__class__.__name__
 		# 各画面への通知用キューを画面IDに紐づけて生成
 		self.queues = {}
 		# ロガー生成
-		context = Context(class_name)
-		self.logger = context.get_logger()
+		context = Context(self.__class__.__name__)
+		self.logger = context.logger
 		# ハンドラ初期化
-		self.commander = Command()
 		self.device_handler = DeviceHandler()
 		self.freq_device_handler = freq_device_handler.FreqDeviceHandler()
 		# 接続されたデバイスのリスト
 		self.device_to_state = self.device_handler.get_connect_device()
-		# タイマー初期化
-		self.buftime = time.time()
 		# 切断されたデバイス
 		self.disconnect_devices = set()
+
+		""" デバイス接続確認サービスの初期化 """
+		self.monitor_service = DeviceMonitorService(self)
 
 		""" GUI生成 """
 		self.title("Android制御ソフト")
@@ -50,11 +48,11 @@ class MainLayout(tk.Tk):
 		self.freq_menu = None
 
 		""" メイン画面生成 """
-		self.create_main()
+		self.create_view()
 
-		""" 監視サービス起動 """
-		self.reload()
-		self.time_event()
+		""" 初回の確認と監視サービスの開始 """
+		self.monitor_service.check_connect_device()
+		self.monitor_service.start()
 
 	def create_queues_key(self, screen_id, device):
 		# 画面IDとIPアドレスを組み合わせたものをキーとして管理
@@ -96,41 +94,9 @@ class MainLayout(tk.Tk):
 		except Exception as e:
 			self.logger.error(e)
 
-	# 毎秒、接続デバイスを自動更新
-	def time_event(self):
-		tmp = time.time()
-		if(tmp - self.buftime) >= 0.5:
-			# 非同期で監視で自動更新
-			th = threading.Thread(target=self.reload)
-			th.start()
-			self.buftime = tmp
-		self.after(1, self.time_event)
-
 	# 接続されたデバイスのリストを更新
 	def reload(self, event=None):
-		show_devices = []
-		tmp = self.device_to_state.copy()
-		self.device_to_state.clear()
-		self.device_to_state = self.device_handler.get_connect_device()
-		for device in self.device_to_state.keys():
-			if self.device_to_state[device] == "offline":
-				device = str(device + "(" + self.device_to_state[device] + ")")
-			show_devices.append(device)
-		if self.device_to_state != tmp:
-			self.connect_device_list_view.delete(0, tk.END)
-			self.connect_device_list_view.insert(tk.END, *show_devices)
-
-		# 接続中デバイス数が減った場合はデバイスが切断されたと判断
-		if len(tmp) > len(self.device_to_state):
-			# 各画面に切断通知
-			self.disconnect_devices = set(self.device_to_state.keys()) ^ set(tmp.keys())
-			th = threading.Thread(target=self.notice_queues)
-			th.start()
-
-		if (event is not None) and (self.freq_menu is not None):
-			self.logger.debug("device list reload button click.")
-			save_data = self.freq_device_handler.get_all_device()
-			self.freq_menu.show_list_reload(save_data)
+		self.monitor_service.check_connect_device()
 
 	# 選択したデバイスを切断
 	def disconnect(self, event=None):
@@ -271,7 +237,7 @@ class MainLayout(tk.Tk):
 	""" アプリインストール画面表示 """
 	def show_install_window(self, event):
 		def show_task(select_device):
-			from ui.dialogs import ApplicationInstallDialog
+			from ui.dialogs.application_install_dialog import ApplicationInstallDialog
 			""" 選択したデバイスが切断されたことを通知するキューを生成 """
 			is_new, que = self.add_queues(screen_ids.APPLICATION_INSTALL_SCREEN, select_device)
 			if is_new:
@@ -299,7 +265,7 @@ class MainLayout(tk.Tk):
 	""" デバイス接続画面表示 """
 	def show_connect_window(self, event):
 		def show_task():
-			from ui.dialogs import DeviceConnectDialog
+			from ui.dialogs.device_connect_dialog import DeviceConnectDialog
 			# 対象デバイスは存在しないため固定値をキーとする。
 			que_key = "0000"
 			is_new, que = self.add_queues(screen_ids.NETWORK_CONNECT_SCREEN, que_key)
@@ -324,7 +290,7 @@ class MainLayout(tk.Tk):
 		self.queues.pop(key)
 
 	""" メイン画面表示 """
-	def create_main(self):
+	def create_view(self):
 		# 背景色
 		background_color = colors.BACKGROUND_COLOR
 		

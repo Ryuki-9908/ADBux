@@ -41,8 +41,10 @@ class SQLiteManager(Context):
                 # table生成
                 cur.execute('CREATE TABLE freq_devices(ipaddr STRING PRIMARY KEY, port STRING)')
                 cur.execute('CREATE TABLE used_devices(id INTEGER PRIMARY KEY AUTOINCREMENT, ipaddr STRING, port STRING)')
-                cur.execute('CREATE TABLE app_path(id INTEGER PRIMARY KEY AUTOINCREMENT, name STRING, path STRING UNIQUE)')
+                cur.execute('CREATE TABLE install_app_path(id INTEGER PRIMARY KEY AUTOINCREMENT, name STRING, path STRING UNIQUE)')
                 # DBコミット
                 self.conn.commit()
             except Exception as e:
-                print(e)
+                # TODO: マイグレーション機能実装
+                # 初回以降の起動はここを通る
+                pass
